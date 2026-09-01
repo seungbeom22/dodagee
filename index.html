@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>두더지 잡기</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f4f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  #game-wrap {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a18;
+    margin-bottom: 1.25rem;
+    letter-spacing: -0.01em;
+  }
+
+  #hud {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .stat {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #e2e0d8;
+    border-radius: 10px;
+    padding: 10px 14px;
+  }
+
+  .stat .label {
+    font-size: 11px;
+    color: #888780;
+    margin-bottom: 2px;
+  }
+
+  .stat .val {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a18;
+    line-height: 1;
+  }
+
+  .stat .val.accent { color: #185fa5; }
+  .stat .val.danger { color: #a32d2d; }
+
+  #start-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid #c8c6be;
+    background: #fff;
+    color: #1a1a18;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.1s, transform 0.1s;
+  }
+
+  #start-btn:hover:not(:disabled) { background: #f0ede8; }
+  #start-btn:active:not(:disabled) { transform: scale(0.97); }
+  #start-btn:disabled { opacity: 0.5; cursor: default; }
+
+  #progress-wrap {
+    height: 4px;
+    background: #e2e0d8;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  #progress-bar {
+    height: 100%;
+    background: #185fa5;
+    border-radius: 2px;
+    transition: width 0.25s linear;
+    width: 100%;
+  }
+
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .hole {
+    aspect-ratio: 1;
+    background: #fff;
+    border: 1px solid #e2e0d8;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.6rem;
+    cursor: default;
+    user-select: none;
+    transition: background 0.08s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hole.active { cursor: pointer; }
+  .hole.active:hover { background: #faeeda; }
+  .hole.hit { background: #eaf3de; }
+  .hole.miss { background: #fcebeb; }
+
+  .mole-emoji { display: block; transition: transform 0.1s; }
+
+  .hole.active .mole-emoji {
+    animation: pop 0.18s ease-out;
+  }
+
+  @keyframes pop {
+    0%   { transform: scale(0.4) translateY(20px); opacity: 0; }
+    70%  { transform: scale(1.15); }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  .score-pop {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #3b6d11;
+    pointer-events: none;
+    animation: floatUp 0.6s ease-out forwards;
+  }
+
+  @keyframes floatUp {
+    0%   { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-24px); }
+  }
+
+  #result-bar {
+    background: #fff;
+    border: 1px solid #e2e0d8;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #5f5e5a;
+    text-align: center;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #result-bar strong { color: #1a1a18; }
+
+  @media (max-width: 360px) {
+    .hole { font-size: 2rem; border-radius: 10px; }
+    #hud { gap: 7px; }
+    .stat .val { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="game-wrap">
+  <h1>🔨 두더지 잡기</h1>
+
+  <div id="hud">
+    <div class="stat">
+      <div class="label">점수</div>
+      <div class="val accent" id="score">0</div>
+    </div>
+    <div class="stat">
+      <div class="label">남은 시간</div>
+      <div class="val" id="timer">30</div>
+    </div>
+    <div class="stat">
+      <div class="label">콤보</div>
+      <div class="val" id="combo">x1</div>
+    </div>
+    <button id="start-btn">시작</button>
+  </div>
+
+  <div id="progress-wrap">
+    <div id="progress-bar"></div>
+  </div>
+
+  <div id="grid">
+    <div class="hole" data-i="0"><span class="mole-emoji">🕳️</span></div>
+    <div class="hole" data-i="1"><span class="mole-emoji">🕳️</span></div>
+    <div class="hole" data-i="2"><span class="mole-emoji">🕳️</span></div>
+    <div class="hole" data-i="3"><span class="mole-emoji">🕳️</span></div>
+    <div class="hole" data-i="4"><span class="mole-emoji">🕳️</span></div>
+    <div class="hole" data-i="5"><span class="mole-emoji">🕳️</span></div>
+    <div class="hole" data-i="6"><span class="mole-emoji">🕳️</span></div>
+    <div class="hole" data-i="7"><span class="mole-emoji">🕳️</span></div>
+    <div class="hole" data-i="8"><span class="mole-emoji">🕳️</span></div>
+  </div>
+
+  <div id="result-bar">시작 버튼을 눌러서 두더지를 잡아라! 🔨</div>
+</div>
+
+<script>
+const TOTAL_TIME = 30;
+const holes = Array.from(document.querySelectorAll('.hole'));
+const scoreEl = document.getElementById('score');
+const timerEl = document.getElementById('timer');
+const comboEl = document.getElementById('combo');
+const resultEl = document.getElementById('result-bar');
+const startBtn = document.getElementById('start-btn');
+const progressBar = document.getElementById('progress-bar');
+
+let score = 0, combo = 1, timeLeft = TOTAL_TIME;
+let running = false, moleTimer = null, countdownTimer = null;
+let activeMoles = new Set();
+let moleTimeouts = {};
+let highScore = 0;
+
+const EMOJIS = ['🐭', '🦔', '🐾'];
+
+function rnd(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function showMole() {
+  if (!running) return;
+
+  const available = holes.filter((h, i) => !activeMoles.has(i));
+  if (available.length === 0) { moleTimer = setTimeout(showMole, 300); return; }
+
+  const hole = available[rnd(0, available.length - 1)];
+  const idx = parseInt(hole.dataset.i);
+  const dur = rnd(700, 1400);
+  const emoji = EMOJIS[rnd(0, EMOJIS.length - 1)];
+
+  activeMoles.add(idx);
+  hole.querySelector('.mole-emoji').textContent = emoji;
+  hole.classList.add('active');
+
+  moleTimeouts[idx] = setTimeout(() => {
+    if (activeMoles.has(idx) && running) missHole(hole, idx);
+  }, dur);
+
+  moleTimer = setTimeout(showMole, rnd(300, 700));
+}
+
+function hitHole(hole, idx) {
+  if (!activeMoles.has(idx) || !running) return;
+  clearTimeout(moleTimeouts[idx]);
+  activeMoles.delete(idx);
+
+  const pts = 10 * combo;
+  score += pts;
+  combo = Math.min(combo + 1, 5);
+  scoreEl.textContent = score;
+  comboEl.textContent = 'x' + combo;
+
+  hole.querySelector('.mole-emoji').textContent = '💥';
+  hole.classList.remove('active');
+  hole.classList.add('hit');
+
+  const pop = document.createElement('span');
+  pop.className = 'score-pop';
+  pop.textContent = '+' + pts;
+  hole.appendChild(pop);
+  setTimeout(() => pop.remove(), 600);
+
+  resultEl.innerHTML = combo >= 3
+    ? `🔥 <strong>${combo}콤보!</strong> +${pts}점`
+    : `👊 잡았다! +${pts}점`;
+
+  setTimeout(() => {
+    hole.querySelector('.mole-emoji').textContent = '🕳️';
+    hole.classList.remove('hit');
+  }, 300);
+}
+
+function missHole(hole, idx) {
+  activeMoles.delete(idx);
+  hole.querySelector('.mole-emoji').textContent = '😤';
+  hole.classList.remove('active');
+  hole.classList.add('miss');
+  combo = 1;
+  comboEl.textContent = 'x1';
+
+  setTimeout(() => {
+    hole.querySelector('.mole-emoji').textContent = '🕳️';
+    hole.classList.remove('miss');
+  }, 400);
+}
+
+holes.forEach(hole => {
+  hole.addEventListener('click', () => {
+    hitHole(hole, parseInt(hole.dataset.i));
+  });
+});
+
+function startGame() {
+  score = 0; combo = 1; timeLeft = TOTAL_TIME;
+  running = true;
+  activeMoles.clear();
+  Object.values(moleTimeouts).forEach(clearTimeout);
+  moleTimeouts = {};
+
+  scoreEl.textContent = 0;
+  timerEl.textContent = TOTAL_TIME;
+  timerEl.style.color = '';
+  comboEl.textContent = 'x1';
+  progressBar.style.width = '100%';
+  progressBar.style.background = '#185fa5';
+
+  holes.forEach(h => {
+    h.classList.remove('active', 'hit', 'miss');
+    h.querySelector('.mole-emoji').textContent = '🕳️';
+  });
+
+  resultEl.innerHTML = '두더지를 잡아라! 🔨';
+  startBtn.textContent = '진행 중';
+  startBtn.disabled = true;
+
+  showMole();
+
+  countdownTimer = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = timeLeft;
+    progressBar.style.width = (timeLeft / TOTAL_TIME * 100) + '%';
+
+    if (timeLeft <= 5) {
+      timerEl.style.color = '#a32d2d';
+      progressBar.style.background = '#a32d2d';
+    }
+
+    if (timeLeft <= 0) endGame();
+  }, 1000);
+}
+
+function endGame() {
+  running = false;
+  clearTimeout(moleTimer);
+  clearInterval(countdownTimer);
+  Object.values(moleTimeouts).forEach(clearTimeout);
+  activeMoles.clear();
+
+  holes.forEach(h => {
+    h.classList.remove('active');
+    h.querySelector('.mole-emoji').textContent = '🕳️';
+  });
+
+  if (score > highScore) highScore = score;
+  timerEl.style.color = '';
+
+  const msg = score >= 300 ? '🏆 완벽해요!' : score >= 150 ? '👍 잘했어요!' : '😅 다시 도전!';
+  resultEl.innerHTML = `<strong>게임 종료!</strong> 최종 점수: <strong>${score}점</strong> &nbsp;|&nbsp; 최고기록: <strong>${highScore}점</strong> &nbsp; ${msg}`;
+
+  startBtn.textContent = '다시 시작';
+  startBtn.disabled = false;
+}
+
+startBtn.addEventListener('click', startGame);
+</script>
+
+</body>
+</html>
