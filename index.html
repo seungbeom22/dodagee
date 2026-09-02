@@ -9,7 +9,7 @@
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #f5f4f0;
+    background: #ffffff;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -40,8 +40,8 @@
 
   .stat {
     flex: 1;
-    background: #fff;
-    border: 1px solid #e2e0d8;
+    background: #f8f7ff;
+    border: 1px solid #e2e0f0;
     border-radius: 10px;
     padding: 10px 14px;
   }
@@ -61,12 +61,13 @@
 
   .stat .val.accent { color: #185fa5; }
   .stat .val.danger { color: #a32d2d; }
+  .stat .val.level  { color: #7c3aed; }
 
   #start-btn {
     padding: 10px 18px;
     border-radius: 10px;
     border: 1px solid #c8c6be;
-    background: #fff;
+    background: #f8f7ff;
     color: #1a1a18;
     font-size: 14px;
     font-weight: 600;
@@ -75,24 +76,49 @@
     transition: background 0.1s, transform 0.1s;
   }
 
-  #start-btn:hover:not(:disabled) { background: #f0ede8; }
+  #start-btn:hover:not(:disabled) { background: #eeecff; }
   #start-btn:active:not(:disabled) { transform: scale(0.97); }
   #start-btn:disabled { opacity: 0.5; cursor: default; }
 
-  #progress-wrap {
-    height: 4px;
-    background: #e2e0d8;
-    border-radius: 2px;
-    overflow: hidden;
+  /* 경험치 바 */
+  #exp-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 10px;
   }
 
-  #progress-bar {
+  #exp-label {
+    font-size: 11px;
+    color: #7c3aed;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 48px;
+  }
+
+  #exp-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: #ede9ff;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  #exp-bar {
     height: 100%;
-    background: #185fa5;
-    border-radius: 2px;
-    transition: width 0.25s linear;
-    width: 100%;
+    background: #7c3aed;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  #exp-text {
+    font-size: 11px;
+    color: #7c3aed;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 52px;
+    text-align: right;
   }
 
   #grid {
@@ -104,8 +130,8 @@
 
   .hole {
     aspect-ratio: 1;
-    background: #fff;
-    border: 1px solid #e2e0d8;
+    background: #f8f7ff;
+    border: 1px solid #e2e0f0;
     border-radius: 14px;
     display: flex;
     align-items: center;
@@ -146,14 +172,58 @@
     animation: floatUp 0.6s ease-out forwards;
   }
 
+  .exp-pop {
+    position: absolute;
+    bottom: 8px;
+    left: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #7c3aed;
+    pointer-events: none;
+    animation: floatUp 0.6s ease-out forwards;
+  }
+
   @keyframes floatUp {
     0%   { opacity: 1; transform: translateY(0); }
     100% { opacity: 0; transform: translateY(-24px); }
   }
 
+  /* 레벨업 토스트 */
+  #levelup-toast {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: #7c3aed;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    padding: 18px 32px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(124,58,237,0.35);
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  #levelup-toast.show {
+    display: block;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    animation: toastAnim 1.2s ease forwards;
+  }
+  @keyframes toastAnim {
+    0%   { opacity: 0; transform: translate(-50%, -60%) scale(0.85); }
+    15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+    25%  { transform: translate(-50%, -50%) scale(1); }
+    75%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -44%) scale(0.95); }
+  }
+
   #result-bar {
-    background: #fff;
-    border: 1px solid #e2e0d8;
+    background: #f8f7ff;
+    border: 1px solid #e2e0f0;
     border-radius: 10px;
     padding: 12px 16px;
     font-size: 14px;
@@ -185,18 +255,21 @@
       <div class="val accent" id="score">0</div>
     </div>
     <div class="stat">
-      <div class="label">남은 시간</div>
-      <div class="val" id="timer">30</div>
-    </div>
-    <div class="stat">
       <div class="label">콤보</div>
       <div class="val" id="combo">x1</div>
+    </div>
+    <div class="stat">
+      <div class="label">레벨</div>
+      <div class="val level" id="level-display">1</div>
     </div>
     <button id="start-btn">시작</button>
   </div>
 
-  <div id="progress-wrap">
-    <div id="progress-bar"></div>
+  <!-- 경험치 바 -->
+  <div id="exp-wrap">
+    <span id="exp-label">Lv.1</span>
+    <div id="exp-bar-bg"><div id="exp-bar"></div></div>
+    <span id="exp-text">0 / 30</span>
   </div>
 
   <div id="grid">
@@ -214,21 +287,104 @@
   <div id="result-bar">시작 버튼을 눌러서 두더지를 잡아라! 🔨</div>
 </div>
 
-<script>
-const TOTAL_TIME = 30;
-const holes = Array.from(document.querySelectorAll('.hole'));
-const scoreEl = document.getElementById('score');
-const timerEl = document.getElementById('timer');
-const comboEl = document.getElementById('combo');
-const resultEl = document.getElementById('result-bar');
-const startBtn = document.getElementById('start-btn');
-const progressBar = document.getElementById('progress-bar');
+<div id="levelup-toast">⭐ 레벨 업!</div>
 
+<script>
+const TOTAL_TIME  = 30;
+const BASE_EXP    = 30;   // 1레벨 → 2레벨 필요 경험치
+const EXP_STEP    = 30;   // 레벨마다 30씩 증가
+const EXP_PER_HIT = 2;    // 두더지 잡을 때마다 경험치 2
+const MAX_LEVEL   = 20;   // 최대 레벨
+
+// 레벨별 두더지 체류 시간(dur)과 다음 소환 간격(interval)
+// 레벨 1: 체류 700~1400ms, 간격 300~700ms
+// 레벨 20: 체류 200~400ms, 간격 80~180ms
+function getSpeed() {
+  const t = (level - 1) / (MAX_LEVEL - 1); // 0.0(Lv1) ~ 1.0(Lv20)
+  const durMin  = Math.round(700  - t * 500);   // 700 → 200
+  const durMax  = Math.round(1400 - t * 1000);  // 1400 → 400
+  const intMin  = Math.round(300  - t * 220);   // 300 → 80
+  const intMax  = Math.round(700  - t * 520);   // 700 → 180
+  return { durMin, durMax, intMin, intMax };
+}
+
+const holes       = Array.from(document.querySelectorAll('.hole'));
+const scoreEl     = document.getElementById('score');
+const comboEl     = document.getElementById('combo');
+const resultEl    = document.getElementById('result-bar');
+const startBtn    = document.getElementById('start-btn');
+const levelDisp   = document.getElementById('level-display');
+const expLabel    = document.getElementById('exp-label');
+const expBar      = document.getElementById('exp-bar');
+const expText     = document.getElementById('exp-text');
+const toast       = document.getElementById('levelup-toast');
+
+// ── 레벨/경험치 상태 (영구 저장) ──────────────────────────
+let level   = parseInt(localStorage.getItem('mole_level'))   || 1;
+let exp     = parseInt(localStorage.getItem('mole_exp'))     || 0;
+let highScore = parseInt(localStorage.getItem('mole_high'))  || 0;
+
+// 현재 레벨에서 다음 레벨까지 필요한 경험치
+// 1→2: 30, 2→3: 60, 3→4: 90, ...
+function expNeeded(lv) {
+  return BASE_EXP + (lv - 1) * EXP_STEP;
+}
+
+function saveProgress() {
+  localStorage.setItem('mole_level', level);
+  localStorage.setItem('mole_exp',   exp);
+  localStorage.setItem('mole_high',  highScore);
+}
+
+function updateExpUI() {
+  const needed = expNeeded(level);
+  const pct    = Math.min(exp / needed * 100, 100);
+  expLabel.textContent  = 'Lv.' + level;
+  expBar.style.width    = pct + '%';
+  expText.textContent   = level >= MAX_LEVEL ? 'MAX' : exp + ' / ' + needed;
+  levelDisp.textContent = level >= MAX_LEVEL ? '👑' + level : level;
+}
+
+function addExp(hole) {
+  exp += EXP_PER_HIT;
+  const needed = expNeeded(level);
+
+  // 경험치 팝업
+  const ep = document.createElement('span');
+  ep.className = 'exp-pop';
+  ep.textContent = '+' + EXP_PER_HIT + 'exp';
+  hole.appendChild(ep);
+  setTimeout(() => ep.remove(), 600);
+
+  // 레벨업 체크: 순수 경험치 방식 → 초과분 carry (최대 레벨 상한)
+  while (level < MAX_LEVEL && exp >= expNeeded(level)) {
+    exp -= expNeeded(level);
+    level++;
+    showLevelUpToast(level);
+  }
+  // 최대 레벨 도달 시 경험치 고정
+  if (level >= MAX_LEVEL) {
+    level = MAX_LEVEL;
+    exp   = expNeeded(MAX_LEVEL); // 바 꽉 찬 상태 유지
+  }
+
+  saveProgress();
+  updateExpUI();
+}
+
+function showLevelUpToast(lv) {
+  toast.textContent = '⭐ LEVEL UP!  Lv.' + lv;
+  toast.classList.remove('show');
+  void toast.offsetWidth; // reflow
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1300);
+}
+
+// ── 게임 상태 ─────────────────────────────────────────────
 let score = 0, combo = 1, timeLeft = TOTAL_TIME;
 let running = false, moleTimer = null, countdownTimer = null;
 let activeMoles = new Set();
 let moleTimeouts = {};
-let highScore = 0;
 
 const EMOJIS = ['🐭', '🦔', '🐾'];
 
@@ -240,9 +396,10 @@ function showMole() {
   const available = holes.filter((h, i) => !activeMoles.has(i));
   if (available.length === 0) { moleTimer = setTimeout(showMole, 300); return; }
 
-  const hole = available[rnd(0, available.length - 1)];
-  const idx = parseInt(hole.dataset.i);
-  const dur = rnd(700, 1400);
+  const hole  = available[rnd(0, available.length - 1)];
+  const idx   = parseInt(hole.dataset.i);
+  const { durMin, durMax, intMin, intMax } = getSpeed();
+  const dur   = rnd(durMin, durMax);
   const emoji = EMOJIS[rnd(0, EMOJIS.length - 1)];
 
   activeMoles.add(idx);
@@ -253,7 +410,7 @@ function showMole() {
     if (activeMoles.has(idx) && running) missHole(hole, idx);
   }, dur);
 
-  moleTimer = setTimeout(showMole, rnd(300, 700));
+  moleTimer = setTimeout(showMole, rnd(intMin, intMax));
 }
 
 function hitHole(hole, idx) {
@@ -264,18 +421,22 @@ function hitHole(hole, idx) {
   const pts = 10 * combo;
   score += pts;
   combo = Math.min(combo + 1, 5);
-  scoreEl.textContent = score;
-  comboEl.textContent = 'x' + combo;
+  scoreEl.textContent  = score;
+  comboEl.textContent  = 'x' + combo;
 
   hole.querySelector('.mole-emoji').textContent = '💥';
   hole.classList.remove('active');
   hole.classList.add('hit');
 
+  // 점수 팝업
   const pop = document.createElement('span');
-  pop.className = 'score-pop';
+  pop.className   = 'score-pop';
   pop.textContent = '+' + pts;
   hole.appendChild(pop);
   setTimeout(() => pop.remove(), 600);
+
+  // 경험치 지급
+  addExp(hole);
 
   resultEl.innerHTML = combo >= 3
     ? `🔥 <strong>${combo}콤보!</strong> +${pts}점`
@@ -314,34 +475,22 @@ function startGame() {
   Object.values(moleTimeouts).forEach(clearTimeout);
   moleTimeouts = {};
 
-  scoreEl.textContent = 0;
-  timerEl.textContent = TOTAL_TIME;
-  timerEl.style.color = '';
-  comboEl.textContent = 'x1';
-  progressBar.style.width = '100%';
-  progressBar.style.background = '#185fa5';
+  scoreEl.textContent  = 0;
+  comboEl.textContent  = 'x1';
 
   holes.forEach(h => {
     h.classList.remove('active', 'hit', 'miss');
     h.querySelector('.mole-emoji').textContent = '🕳️';
   });
 
-  resultEl.innerHTML = '두더지를 잡아라! 🔨';
-  startBtn.textContent = '진행 중';
-  startBtn.disabled = true;
+  resultEl.innerHTML    = '두더지를 잡아라! 🔨';
+  startBtn.textContent  = '진행 중';
+  startBtn.disabled     = true;
 
   showMole();
 
   countdownTimer = setInterval(() => {
     timeLeft--;
-    timerEl.textContent = timeLeft;
-    progressBar.style.width = (timeLeft / TOTAL_TIME * 100) + '%';
-
-    if (timeLeft <= 5) {
-      timerEl.style.color = '#a32d2d';
-      progressBar.style.background = '#a32d2d';
-    }
-
     if (timeLeft <= 0) endGame();
   }, 1000);
 }
@@ -358,17 +507,22 @@ function endGame() {
     h.querySelector('.mole-emoji').textContent = '🕳️';
   });
 
-  if (score > highScore) highScore = score;
-  timerEl.style.color = '';
+  if (score > highScore) {
+    highScore = score;
+    saveProgress();
+  }
 
   const msg = score >= 300 ? '🏆 완벽해요!' : score >= 150 ? '👍 잘했어요!' : '😅 다시 도전!';
   resultEl.innerHTML = `<strong>게임 종료!</strong> 최종 점수: <strong>${score}점</strong> &nbsp;|&nbsp; 최고기록: <strong>${highScore}점</strong> &nbsp; ${msg}`;
 
   startBtn.textContent = '다시 시작';
-  startBtn.disabled = false;
+  startBtn.disabled    = false;
 }
 
 startBtn.addEventListener('click', startGame);
+
+// 초기 UI
+updateExpUI();
 </script>
 
 </body>
