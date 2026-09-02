@@ -308,6 +308,57 @@ function getSpeed() {
   return { durMin, durMax, intMin, intMax };
 }
 
+// ── 효과음 (Web Audio API, 파일 없이 합성) ──────────────────
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// 띠용~ : 맞췄을 때, 위로 튕겨오르는 코믹한 소리
+function playHitSound() {
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(220, now);
+  osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+  osc.frequency.exponentialRampToValueAtTime(660, now + 0.22);
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.35, now + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.3);
+}
+
+// 띡~ : 헛다리 짚었을 때, 짧고 둔탁한 소리
+function playMissSound() {
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(180, now);
+  osc.frequency.exponentialRampToValueAtTime(110, now + 0.09);
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.11);
+}
+
 const holes       = Array.from(document.querySelectorAll('.hole'));
 const scoreEl     = document.getElementById('score');
 const comboEl     = document.getElementById('combo');
@@ -418,6 +469,8 @@ function hitHole(hole, idx) {
   clearTimeout(moleTimeouts[idx]);
   activeMoles.delete(idx);
 
+  playHitSound();
+
   const pts = 10 * combo;
   score += pts;
   combo = Math.min(combo + 1, 5);
@@ -450,6 +503,7 @@ function hitHole(hole, idx) {
 
 function missHole(hole, idx) {
   activeMoles.delete(idx);
+  playMissSound();
   hole.querySelector('.mole-emoji').textContent = '😤';
   hole.classList.remove('active');
   hole.classList.add('miss');
@@ -469,6 +523,7 @@ holes.forEach(hole => {
 });
 
 function startGame() {
+  getAudioCtx(); // 사용자 클릭 시점에 오디오 컨텍스트 활성화(브라우저 자동재생 정책 대응)
   score = 0; combo = 1; timeLeft = TOTAL_TIME;
   running = true;
   activeMoles.clear();
